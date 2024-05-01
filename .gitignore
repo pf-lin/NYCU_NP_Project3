@@ -52,4 +52,7 @@ Thumbs.db
 .vscode/
 
 # http server
-http server
+http_server
+
+# cgi
+*.cgi
