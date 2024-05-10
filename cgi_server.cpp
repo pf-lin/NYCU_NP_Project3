@@ -34,8 +34,6 @@ struct ConnectionInfo {
     string file = "";
 };
 
-boost::asio::io_context io_context;
-
 vector<ConnectionInfo> connections(MAX_CONNECTION);
 
 const string HTTP_OK = "HTTP/1.1 200 OK\r\n";
@@ -349,10 +347,9 @@ class Client : public std::enable_shared_from_this<Client> {
     char data_[max_length];
 };
 
-
 class session : public std::enable_shared_from_this<session> {
   public:
-    session(tcp::socket socket) : socket_(std::move(socket)) {}
+    session(tcp::socket socket, boost::asio::io_context &io_context) : socket_(std::move(socket)), io_context_(io_context) {}
 
     void start() {
         doRead();
@@ -375,7 +372,7 @@ class session : public std::enable_shared_from_this<session> {
                         parseQueryString();
                         string console = createPanel();
                         doWrite(console);
-                        makeConnection(io_context);
+                        makeConnection(); // Connect to NP servers
                     }
                     else {
                         cout << "Invalid path: " << envVars.PATH_INFO << endl;
@@ -442,18 +439,21 @@ class session : public std::enable_shared_from_this<session> {
         }
     }
 
-    void makeConnection(boost::asio::io_context &io_context) {
+    void makeConnection() {
+        // get socket from web
         shared_ptr<tcp::socket> webSocket = make_shared<tcp::socket>(std::move(socket_));
+
         for (int idx = 0; idx < MAX_CONNECTION; idx++) {
             if (connections[idx].host == "") {
                 return;
             }
 
-            std::make_shared<Client>(idx, io_context, webSocket)->start();
+            std::make_shared<Client>(idx, io_context_, webSocket)->start();
         }
     }
 
     tcp::socket socket_;
+    boost::asio::io_context &io_context_;
     enum { max_length = 1024 };
     char data_[max_length];
     Environment envVars;
@@ -462,7 +462,7 @@ class session : public std::enable_shared_from_this<session> {
 class server {
   public:
     server(boost::asio::io_context &io_context, short port)
-        : acceptor_(io_context, tcp::endpoint(tcp::v4(), port)) {
+        : acceptor_(io_context, tcp::endpoint(tcp::v4(), port)), io_context_(io_context) {
         do_accept();
     }
 
@@ -471,7 +471,7 @@ class server {
         acceptor_.async_accept(
             [this](boost::system::error_code ec, tcp::socket socket) {
                 if (!ec) {
-                    std::make_shared<session>(std::move(socket))->start();
+                    std::make_shared<session>(std::move(socket), io_context_)->start();
                 }
 
                 do_accept();
@@ -479,6 +479,7 @@ class server {
     }
 
     tcp::acceptor acceptor_;
+    boost::asio::io_context &io_context_;
 };
 
 int main(int argc, char *argv[]) {
@@ -487,6 +488,8 @@ int main(int argc, char *argv[]) {
             std::cerr << "Usage: async_tcp_echo_server <port>\n";
             return 1;
         }
+
+        boost::asio::io_context io_context;
 
         server s(io_context, std::atoi(argv[1]));
 
