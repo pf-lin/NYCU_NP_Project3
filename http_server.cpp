@@ -23,9 +23,9 @@ struct Environment {
 
 const string HTTP_OK = "HTTP/1.1 200 OK\r\n";
 
-class session : public std::enable_shared_from_this<session> {
+class Session : public std::enable_shared_from_this<Session> {
   public:
-    session(tcp::socket socket) : socket_(std::move(socket)) {}
+    Session(tcp::socket socket) : socket_(std::move(socket)) {}
 
     void start() {
         do_read();
@@ -113,9 +113,9 @@ class session : public std::enable_shared_from_this<session> {
     Environment envVars;
 };
 
-class server {
+class Server {
   public:
-    server(boost::asio::io_context &io_context, short port)
+    Server(boost::asio::io_context &io_context, short port)
         : acceptor_(io_context, tcp::endpoint(tcp::v4(), port)) {
         do_accept();
     }
@@ -125,7 +125,7 @@ class server {
         acceptor_.async_accept(
             [this](boost::system::error_code ec, tcp::socket socket) {
                 if (!ec) {
-                    std::make_shared<session>(std::move(socket))->start();
+                    std::make_shared<Session>(std::move(socket))->start();
                 }
 
                 do_accept();
@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
 
         boost::asio::io_context io_context;
 
-        server s(io_context, std::atoi(argv[1]));
+        Server s(io_context, std::atoi(argv[1]));
 
         io_context.run();
     } catch (std::exception &e) {

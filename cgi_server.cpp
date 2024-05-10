@@ -139,7 +139,7 @@ string getPanel() {
     return contentType + contentHead + contentBodyFront + contentBodyMiddle + contentBodyEnd;
 }
 
-string createPanel() {
+string createConsole() {
     string contentHead = R"(
         <!DOCTYPE html>
         <html lang="en">
@@ -340,16 +340,16 @@ class Client : public std::enable_shared_from_this<Client> {
 
     int userIdx_;
     tcp::socket socket_;
-    shared_ptr<tcp::socket> webSocket_; // Web server socket
+    shared_ptr<tcp::socket> webSocket_; // Web socket
     tcp::resolver resolver_;
     fstream file_;
     enum { max_length = 1024 };
     char data_[max_length];
 };
 
-class session : public std::enable_shared_from_this<session> {
+class Session : public std::enable_shared_from_this<Session> {
   public:
-    session(tcp::socket socket, boost::asio::io_context &io_context) : socket_(std::move(socket)), io_context_(io_context) {}
+    Session(tcp::socket socket, boost::asio::io_context &io_context) : socket_(std::move(socket)), io_context_(io_context) {}
 
     void start() {
         doRead();
@@ -370,7 +370,7 @@ class session : public std::enable_shared_from_this<session> {
                     }
                     else if (envVars.PATH_INFO == "/console.cgi") {
                         parseQueryString();
-                        string console = createPanel();
+                        string console = createConsole();
                         doWrite(console);
                         makeConnection(); // Connect to NP servers
                     }
@@ -459,9 +459,9 @@ class session : public std::enable_shared_from_this<session> {
     Environment envVars;
 };
 
-class server {
+class Server {
   public:
-    server(boost::asio::io_context &io_context, short port)
+    Server(boost::asio::io_context &io_context, short port)
         : acceptor_(io_context, tcp::endpoint(tcp::v4(), port)), io_context_(io_context) {
         do_accept();
     }
@@ -471,7 +471,7 @@ class server {
         acceptor_.async_accept(
             [this](boost::system::error_code ec, tcp::socket socket) {
                 if (!ec) {
-                    std::make_shared<session>(std::move(socket), io_context_)->start();
+                    std::make_shared<Session>(std::move(socket), io_context_)->start();
                 }
 
                 do_accept();
@@ -491,7 +491,7 @@ int main(int argc, char *argv[]) {
 
         boost::asio::io_context io_context;
 
-        server s(io_context, std::atoi(argv[1]));
+        Server s(io_context, std::atoi(argv[1]));
 
         io_context.run();
     } catch (std::exception &e) {

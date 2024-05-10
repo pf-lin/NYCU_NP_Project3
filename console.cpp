@@ -216,7 +216,7 @@ void parseQueryString() {
     }
 }
 
-void createPanel() {
+void createConsole() {
     cout << contentType;
     cout << contentHead;
     cout << contentBodyFront;
@@ -251,7 +251,7 @@ int main(int argc, char *argv[]) {
         boost::asio::io_context io_context;
 
         parseQueryString();
-        createPanel();
+        createConsole();
         makeConnection(io_context);
 
         io_context.run();
