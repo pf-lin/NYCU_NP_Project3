@@ -56,3 +56,6 @@ http_server
 
 # cgi
 *.cgi
+
+# bin
+bin/

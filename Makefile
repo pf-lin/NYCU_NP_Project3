@@ -8,6 +8,9 @@ CXX_LIB_PARAMS=$(addprefix -L , $(CXX_LIB_DIRS))
 part1: http_server.cpp console.cpp
 	$(CXX) http_server.cpp -o http_server $(CXX_INCLUDE_PARAMS) $(CXX_LIB_PARAMS) $(CXXFLAGS)
 	$(CXX) console.cpp -o console.cgi $(CXX_INCLUDE_PARAMS) $(CXX_LIB_PARAMS) $(CXXFLAGS)
+	mkdir -p bin
+	cp /bin/ls /bin/cat bin/
+	make -C extra_files/command
 
 part2: cgi_server.cpp
 	g++ cgi_server.cpp -o cgi_server -lws2_32 -lwsock32 -std=c++14
@@ -15,3 +18,4 @@ part2: cgi_server.cpp
 clean:
 	rm -f http_server
 	rm -f console.cgi
+	rm -rf bin
