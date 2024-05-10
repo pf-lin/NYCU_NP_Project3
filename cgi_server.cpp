@@ -255,17 +255,16 @@ class Client : public std::enable_shared_from_this<Client> {
 
     void doRead() {
         auto self(shared_from_this());
-        memset(data_, '\0', max_length); // Clear read data from last time
         socket_.async_read_some(
             boost::asio::buffer(data_, max_length),
             [this, self](boost::system::error_code ec, std::size_t length) {
                 if (!ec) {
-                    string content(data_);
-                    string output = outputShell(content);
-                    writeToWeb(output);
-
+                    string content(data_, length);
                     // Clear read data
                     memset(data_, '\0', max_length);
+
+                    string output = outputShell(content);
+                    writeToWeb(output);
 
                     if (content.find("% ") != string::npos) {
                         writeToNPServer();

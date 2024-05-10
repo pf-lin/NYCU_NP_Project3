@@ -123,11 +123,11 @@ class Client : public std::enable_shared_from_this<Client> {
             boost::asio::buffer(data_, max_length),
             [this, self](boost::system::error_code ec, std::size_t length) {
                 if (!ec) {
-                    string content(data_);
-                    outputShell(content);
-
+                    string content(data_, length);
                     // Clear read data
                     memset(data_, '\0', max_length);
+
+                    outputShell(content);
 
                     if (content.find("% ") != string::npos) {
                         doWrite();
