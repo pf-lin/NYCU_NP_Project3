@@ -22,6 +22,7 @@ struct Environment {
 };
 
 const string HTTP_OK = "HTTP/1.1 200 OK\r\n";
+const string HTTP_FORBIDDEN = "HTTP/1.1 403 Forbidden\r\n";
 
 class Session : public std::enable_shared_from_this<Session> {
   public:
@@ -93,7 +94,12 @@ class Session : public std::enable_shared_from_this<Session> {
             dup2(socket_.native_handle(), STDOUT_FILENO);
             socket_.close();
 
-            cout << HTTP_OK << flush;
+            if (envVars.PATH_INFO == "/panel.cgi")
+                cout << HTTP_OK << flush;
+            else {
+                cout << HTTP_FORBIDDEN << flush;
+                exit(0);
+            }
 
             string path = "." + envVars.PATH_INFO;
             cout << envVars.PATH_INFO << endl;
