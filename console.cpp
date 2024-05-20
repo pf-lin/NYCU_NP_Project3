@@ -86,7 +86,7 @@ vector<ConnectionInfo> connections(MAX_CONNECTION);
 class Client : public std::enable_shared_from_this<Client> {
   public:
     Client(int index, boost::asio::io_context &io_context)
-        : userIdx_(index), socket_(io_context), resolver_(io_context) {}
+        : userIdx_(index), socket_(io_context), resolver_(io_context), timer_(io_context) {}
 
     void start() {
         file_.open(("./test_case/" + connections[userIdx_].file), ios::in); // Open file
@@ -130,13 +130,23 @@ class Client : public std::enable_shared_from_this<Client> {
                     outputShell(content);
 
                     if (content.find("% ") != string::npos) {
-                        doWrite();
+                        delayedCommand();
                     }
                     else {
                         doRead();
                     }
                 }
             });
+    }
+
+    void delayedCommand() {
+        auto self(shared_from_this());
+        timer_.expires_from_now(boost::posix_time::seconds(1));
+        timer_.async_wait([this, self](const boost::system::error_code &ec) {
+            if (!ec) {
+                doWrite();
+            }
+        });
     }
 
     void doWrite() {
@@ -190,6 +200,7 @@ class Client : public std::enable_shared_from_this<Client> {
     int userIdx_;
     tcp::socket socket_;
     tcp::resolver resolver_;
+    boost::asio::deadline_timer timer_;
     fstream file_;
     enum { max_length = 1024 };
     char data_[max_length];
