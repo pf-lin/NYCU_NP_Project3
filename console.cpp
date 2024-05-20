@@ -155,7 +155,14 @@ class Client : public std::enable_shared_from_this<Client> {
     string getCommand() {
         string command;
         if (file_.is_open()) {
-            getline(file_, command);
+            if (firstCmd) {
+                firstCmd = false;
+                command = "who";
+            }
+            else {
+                getline(file_, command);
+            }
+
             if (command.find("exit") != string::npos) {
                 file_.close();
             }
@@ -193,6 +200,7 @@ class Client : public std::enable_shared_from_this<Client> {
     fstream file_;
     enum { max_length = 1024 };
     char data_[max_length];
+    bool firstCmd = true;
 };
 
 void parseQueryString() {
